@@ -1,3 +1,4 @@
+const { CollectorExporter } = require('@opentelemetry/exporter-collector');
 const opentelemetry = require('@opentelemetry/api');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
@@ -28,6 +29,11 @@ const provider = new NodeTracerProvider();
 
 // Initialize the exporter
 const te = new TraceExporter({ projectId: projectId });
+
+// const collectorOptions = {
+//     // url: 'http://127.0.0.1:55678/v1/trace',
+//   };
+// const te = new CollectorExporter(collectorOptions);
 
 // Configure the span processor to send spans to the exporter
 provider.addSpanProcessor(new SimpleSpanProcessor(te));

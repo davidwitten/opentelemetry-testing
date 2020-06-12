@@ -4,14 +4,36 @@ import { Container, Col, Row, Form, Button, Card } from 'react-bootstrap';
 import axios from 'axios';
 import { tracing } from '@opencensus/web-instrumentation-zone';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
-import { DocumentLoad } from '@opentelemetry/plugin-document-load';
+import { WebTracerProvider, WebMeterProvider } from '@opentelemetry/web';
+import { ConsoleMetricExporter, MeterProvider } from '@opentelemetry/metrics';
+
+// import { DocumentLoad } from '@opentelemetry/plugin-document-load';
 import { CollectorExporter } from '@opentelemetry/exporter-collector';
 const opentelemetry = require('@opentelemetry/api');
 
 
 
 require('dotenv').config()
+
+// start web metrics testing
+const me = new ConsoleMetricExporter();
+const meter = new WebMeterProvider({
+    exporter: me,
+    interval: 60000,
+}).getMeter('web metrics');
+
+const request_count = meter.createCounter('counting_requests', {
+    monotonic: true,
+    labelKeys: ['pid'],
+    description: 'Counts number of requests',
+});
+
+
+// end web metrics testing
+
+
+
+
 
 
 // Edit this to point to the app to the OpenTelemetry Collector address:
@@ -20,27 +42,27 @@ const collectorURL = `${process.env.REACT_APP_OT_COLLECTOR}/v1/trace`;
 // const collectorURL = 'http://35.188.162.236/v1/trace';
 
 const webTracer = new WebTracerProvider({
-  plugins: [
-    new DocumentLoad(),
-  ],
+//   plugins: [
+//     new DocumentLoad(),
+//   ],
 });
 const collectorOptions = {
   url: collectorURL,
 };
 const exporter = new CollectorExporter(collectorOptions);
 webTracer.addSpanProcessor(new SimpleSpanProcessor(exporter));
-
+webTracer.register();
 
 
 // Minimum required setup for the tracer - supports only synchronous operations
-const provider = new WebTracerProvider({
-    plugins: [
-        new DocumentLoad()
-    ]
-});
+// const provider = new WebTracerProvider({
+//     // plugins: [
+//     //     new DocumentLoad()
+//     // ]
+// });
 
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-provider.register();
+// provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+// provider.register();
 
 opentelemetry.trace.setGlobalTracerProvider(webTracer);
 const tracer = opentelemetry.trace.getTracer('basic');
@@ -55,6 +77,7 @@ function App() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        request_count.bind({}).add(1);
         console.log(document.getElementById("searchbar").value);
         // opentelemetry: starting span to trace the whole process of getting quantity and price for an ingredient
         const searchSpan = tracer.startSpan('Opentelemetry: finding vendors selling the ingredient');

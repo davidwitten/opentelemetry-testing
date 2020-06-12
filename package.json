@@ -22,5 +22,6 @@
   "homepage": "https://github.com/davidwitten/opentelemetry-testing#readme",
   "devDependencies": {
     "concurrently": "^5.2.0"
-  }
+  },
+  "dependencies": {}
 }
