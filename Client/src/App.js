@@ -6,7 +6,9 @@ import { tracing } from '@opencensus/web-instrumentation-zone';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
 import { DocumentLoad } from '@opentelemetry/plugin-document-load';
-import { CollectorExporter } from '@opentelemetry/exporter-collector';
+import { CollectorTraceExporter, CollectorMetricExporter } from '@opentelemetry/exporter-collector';
+import { MeterProvider, MetricObservable } from '@opentelemetry/metrics';
+// const { MeterProvider, MetricObservable} = require('@opentelemetry/metrics');
 const opentelemetry = require('@opentelemetry/api');
 
 
@@ -18,7 +20,7 @@ require('dotenv').config()
 // If running locally use http://localhost:55678/v1/trace
 const collectorURL = `${process.env.REACT_APP_OT_COLLECTOR}/v1/trace`;
 // const collectorURL = 'http://35.188.162.236/v1/trace';
-
+const metricURL = `${process.env.REACT_APP_OT_COLLECTOR}/v1/metrics`;
 const webTracer = new WebTracerProvider({
   plugins: [
     new DocumentLoad(),
@@ -27,11 +29,25 @@ const webTracer = new WebTracerProvider({
 const collectorOptions = {
   url: collectorURL,
 };
-const exporter = new CollectorExporter(collectorOptions);
+const exporter = new CollectorTraceExporter(collectorOptions);
 webTracer.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
+/* const metric_exporter = new CollectorMetricExporter({url: metricURL});
+
+const meter = new MeterProvider({
+    exporter: metric_exporter,
+    interval: 10000,
+  }).getMeter('example-prometheus'); */
 
 
+  // Monotonic counters can only be increased.
+/* const errorCount = meter.createCounter('BrowserError', {
+    monotonic: true,
+    labelKeys: ['pid'],
+    description: 'Counts the number of errors',
+  });*/
+
+const labels = {pid: `${process.pid}`};
 // Minimum required setup for the tracer - supports only synchronous operations
 const provider = new WebTracerProvider({
     plugins: [
@@ -55,6 +71,7 @@ function App() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        // errorCount.bind(labels).add(1);
         console.log(document.getElementById("searchbar").value);
         // opentelemetry: starting span to trace the whole process of getting quantity and price for an ingredient
         const searchSpan = tracer.startSpan('Opentelemetry: finding vendors selling the ingredient');
